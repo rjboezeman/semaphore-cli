@@ -37,4 +37,4 @@ Repository = "https://github.com/rjboezeman/semaphore-cli"
 "Bug Tracker" = "https://github.com/rjboezeman/semaphore-cli/issues"
 
 [project.scripts]
-semaphore = "semaphore.cli:main"
+semaphore-cli = "semaphore.cli:main"

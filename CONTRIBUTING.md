@@ -52,10 +52,10 @@ semaphore/
 The tool does not have a mock-based test suite — it is tested against a live SemaphoreUI instance. A useful workflow:
 
 ```bash
-semaphore check                        # verify connectivity
-semaphore apply config.example.json   # apply the example config
-semaphore diff config.example.json    # should show all [=]
-semaphore purge                        # clean up
+semaphore-cli \1                        # verify connectivity
+semaphore-cli \1 config.example.json   # apply the example config
+semaphore-cli \1 config.example.json    # should show all [=]
+semaphore-cli \1                        # clean up
 ```
 
 ## Submitting changes

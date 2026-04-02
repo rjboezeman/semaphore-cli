@@ -5,11 +5,11 @@ A command-line tool for managing [SemaphoreUI](https://semaphoreui.com) (Ansible
 `semaphore-cli` works with **SemaphoreUI's own export format** — the JSON file you get from *Project → Settings → Export*. You can use it to apply that file to any SemaphoreUI instance, compare it against what is deployed, or restore a project after a `purge`.
 
 ```
-semaphore apply  config.json   # create or update all resources
-semaphore diff   config.json   # compare config against deployed state
-semaphore check                # verify connectivity and access rights
-semaphore purge                # delete everything (with confirmation)
-semaphore list                 # list deployed projects
+semaphore-cli apply  config.json   # create or update all resources
+semaphore-cli diff   config.json   # compare config against deployed state
+semaphore-cli check                # verify connectivity and access rights
+semaphore-cli purge                # delete everything (with confirmation)
+semaphore-cli list                 # list deployed projects
 ```
 
 ---
@@ -48,7 +48,7 @@ For development (changes take effect immediately without reinstalling):
 pip install -e .
 ```
 
-This installs a `semaphore` command on your `PATH`.
+This installs a `semaphore-cli` command on your `PATH`.
 
 ---
 
@@ -72,12 +72,12 @@ The `.env` file is listed in `.gitignore` and will never be committed.
 
 ## Usage
 
-### `semaphore check`
+### `semaphore-cli check`
 
 Verify that the API is reachable, that login succeeds, and that the configured account has the rights needed to create and update resources. Lists all deployed projects with their resource counts and per-project role. Safe to run at any time — makes no changes.
 
 ```
-$ semaphore check
+$ semaphore-cli check
 
 Connectivity
   [ok]   Logged in as 'Admin' (admin@example.com)
@@ -102,7 +102,7 @@ Projects
 
 ---
 
-### `semaphore apply <config.json>`
+### `semaphore-cli apply <config.json>`
 
 Apply a SemaphoreUI export file to the instance. The project is identified by the `name` field in `meta`. Resources are matched by name:
 
@@ -113,7 +113,7 @@ Apply a SemaphoreUI export file to the instance. The project is identified by th
 **Note on keys:** Export files never contain secret values (SSH private keys, passwords). Existing keys are skipped to preserve live credentials. New keys are created with `PLACEHOLDER` values — you must update them via the SemaphoreUI UI before running tasks.
 
 ```
-$ semaphore apply web-infrastructure.json
+$ semaphore-cli apply web-infrastructure.json
 
 Project: Web Infrastructure
   [created] id=1
@@ -139,7 +139,7 @@ Done.
 
 ---
 
-### `semaphore diff <config.json>`
+### `semaphore-cli diff <config.json>`
 
 Compare a config file against the currently deployed state without making any changes.
 
@@ -152,7 +152,7 @@ Compare a config file against the currently deployed state without making any ch
 **Note:** Secret values (SSH keys, passwords) are write-only in the SemaphoreUI API and cannot be compared. Key entries always show as `[=]` as long as name and type match.
 
 ```
-$ semaphore diff web-infrastructure.json
+$ semaphore-cli diff web-infrastructure.json
 
 [=] Project: Web Infrastructure
   Keys:
@@ -181,12 +181,12 @@ Summary:
 
 ---
 
-### `semaphore purge`
+### `semaphore-cli purge`
 
 Delete **all** projects and their resources from the SemaphoreUI instance. This is irreversible. You will be asked to prove you really mean it:
 
 ```
-$ semaphore purge
+$ semaphore-cli purge
 
 You are about to PERMANENTLY delete 2 project(s):
   - Web Infrastructure
@@ -200,12 +200,12 @@ To confirm, please type exactly:
 
 ---
 
-### `semaphore list`
+### `semaphore-cli list`
 
 List all projects currently deployed on the instance.
 
 ```
-$ semaphore list
+$ semaphore-cli list
 
 Found 2 project(s):
 

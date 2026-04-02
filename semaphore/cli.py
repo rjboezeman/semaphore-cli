@@ -19,7 +19,7 @@ _USAGE = """\
 SemaphoreUI configuration tool
 
 Usage:
-  semaphore <command> [arguments]
+  semaphore-cli <command> [arguments]
 
 Commands:
   apply  <config.json>
