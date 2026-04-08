@@ -60,4 +60,6 @@ def _payload(
         "allow_parallel_tasks":          cfg.get("allow_parallel_tasks", False),
         "suppress_success_alerts":       cfg.get("suppress_success_alerts", False),
         "autorun":                       cfg.get("autorun", False),
+        "survey_vars":                   cfg.get("survey_vars", []),
+        "task_params":                   cfg.get("task_params", {}),
     }

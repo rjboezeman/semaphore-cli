@@ -93,7 +93,31 @@ EXPORT_SCHEMA: dict = {
                     "allow_parallel_tasks":          {"type": "boolean"},
                     "suppress_success_alerts":       {"type": "boolean"},
                     "autorun":                       {"type": "boolean"},
-                    "survey_vars":                   {"type": "array"},
+                    "survey_vars": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["name", "type"],
+                            "properties": {
+                                "name":        {"type": "string", "minLength": 1},
+                                "title":       {"type": "string"},
+                                "description": {"type": "string"},
+                                "required":    {"type": "boolean"},
+                                "type":        {"type": "string", "enum": ["string", "enum", "secret", "boolean"]},
+                                "values": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": ["name", "value"],
+                                        "properties": {
+                                            "name":  {"type": "string", "minLength": 1},
+                                            "value": {"type": "string"},
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
                     "vaults":                        {"type": "array"},
                     "task_params":                   {"type": "object"},
                 },

@@ -163,11 +163,19 @@ def _diff_templates(
             continue
         srv = srv_by_name[name]
         changes = _compare({
-            "app":         (srv.get("app", ""),      cfg.get("app", "ansible")),
-            "playbook":    (srv.get("playbook", ""), cfg.get("playbook", "")),
-            "repository":  (repo_id_to_name.get(srv["repository_id"], "?"), cfg["repository"]),
-            "inventory":   (inv_id_to_name.get(srv["inventory_id"], "?"),   cfg["inventory"]),
-            "environment": (env_id_to_name.get(srv["environment_id"], "?"), cfg["environment"]),
+            "app":                           (srv.get("app", ""),                      cfg.get("app", "ansible")),
+            "playbook":                      (srv.get("playbook", ""),                 cfg.get("playbook", "")),
+            "repository":                    (repo_id_to_name.get(srv["repository_id"], "?"), cfg["repository"]),
+            "inventory":                     (inv_id_to_name.get(srv["inventory_id"], "?"),   cfg["inventory"]),
+            "environment":                   (env_id_to_name.get(srv["environment_id"], "?"), cfg["environment"]),
+            "description":                   (srv.get("description", ""),              cfg.get("description", "")),
+            "allow_override_args_in_task":   (srv.get("allow_override_args_in_task", False),   cfg.get("allow_override_args_in_task", False)),
+            "allow_override_branch_in_task": (srv.get("allow_override_branch_in_task", False), cfg.get("allow_override_branch_in_task", False)),
+            "allow_parallel_tasks":          (srv.get("allow_parallel_tasks", False),  cfg.get("allow_parallel_tasks", False)),
+            "suppress_success_alerts":       (srv.get("suppress_success_alerts", False), cfg.get("suppress_success_alerts", False)),
+            "autorun":                       (srv.get("autorun", False),               cfg.get("autorun", False)),
+            "survey_vars":                   (srv.get("survey_vars") or [],            cfg.get("survey_vars") or []),
+            "task_params":                   (srv.get("task_params") or {},            cfg.get("task_params") or {}),
         })
         results.append(ResourceDiff(_CHANGED if changes else _UNCHANGED, name, changes))
     return results
