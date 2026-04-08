@@ -1,4 +1,5 @@
 from semaphore.client import SemaphoreClient
+from semaphore.resources.utils import resolve_key
 
 
 def list_repositories(client: SemaphoreClient, project_id: int) -> list[dict]:
@@ -19,5 +20,5 @@ def _payload(project_id: int, cfg: dict, key_map: dict[str, int]) -> dict:
         "project_id": project_id,
         "git_url": cfg["git_url"],
         "git_branch": cfg.get("git_branch", "main"),
-        "ssh_key_id": key_map[cfg.get("ssh_key", "none")],
+        "ssh_key_id": resolve_key(key_map, cfg.get("ssh_key", "none"), "repository", cfg["name"]),
     }
