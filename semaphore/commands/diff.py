@@ -49,7 +49,8 @@ def diff(client: SemaphoreClient, config: dict) -> None:
     srv_envs  = {e["name"]: e for e in list_environments(client, project_id)}
     srv_tmpls = {t["name"]: t for t in list_templates(client, project_id)}
 
-    # Reverse id→name maps for resolving template foreign keys
+    # Reverse id→name maps for resolving foreign keys in diff comparisons
+    key_id_to_name  = {k["id"]: k["name"] for k in srv_keys.values()}
     repo_id_to_name = {r["id"]: r["name"] for r in srv_repos.values()}
     inv_id_to_name  = {i["id"]: i["name"] for i in srv_invs.values()}
     env_id_to_name  = {e["id"]: e["name"] for e in srv_envs.values()}
@@ -60,12 +61,12 @@ def diff(client: SemaphoreClient, config: dict) -> None:
     _tally("keys", diffs, counters)
 
     print("  Repositories:")
-    diffs = _diff_repositories(config.get("repositories", []), srv_repos)
+    diffs = _diff_repositories(config.get("repositories", []), srv_repos, key_id_to_name)
     _print_diffs(diffs, "    ")
     _tally("repositories", diffs, counters)
 
     print("  Inventory:")
-    diffs = _diff_inventory(config.get("inventories", []), srv_invs)
+    diffs = _diff_inventory(config.get("inventories", []), srv_invs, key_id_to_name)
     _print_diffs(diffs, "    ")
     _tally("inventory", diffs, counters)
 
@@ -100,7 +101,7 @@ def _diff_keys(keys_cfg: list[dict], srv_by_name: dict) -> list[ResourceDiff]:
     return results
 
 
-def _diff_repositories(repos_cfg: list[dict], srv_by_name: dict) -> list[ResourceDiff]:
+def _diff_repositories(repos_cfg: list[dict], srv_by_name: dict, key_id_to_name: dict) -> list[ResourceDiff]:
     results = []
     for cfg in repos_cfg:
         name = cfg["name"]
@@ -111,12 +112,13 @@ def _diff_repositories(repos_cfg: list[dict], srv_by_name: dict) -> list[Resourc
         changes = _compare({
             "git_url":    (srv["git_url"],    cfg["git_url"]),
             "git_branch": (srv["git_branch"], cfg.get("git_branch", "main")),
+            "ssh_key":    (key_id_to_name.get(srv.get("ssh_key_id"), "None"), cfg.get("ssh_key", "None")),
         })
         results.append(ResourceDiff(_CHANGED if changes else _UNCHANGED, name, changes))
     return results
 
 
-def _diff_inventory(inventory_cfg: list[dict], srv_by_name: dict) -> list[ResourceDiff]:
+def _diff_inventory(inventory_cfg: list[dict], srv_by_name: dict, key_id_to_name: dict) -> list[ResourceDiff]:
     results = []
     for cfg in inventory_cfg:
         name = cfg["name"]
@@ -125,8 +127,10 @@ def _diff_inventory(inventory_cfg: list[dict], srv_by_name: dict) -> list[Resour
             continue
         srv = srv_by_name[name]
         changes = _compare({
-            "type":      (srv["type"],      cfg.get("type", "static")),
-            "inventory": (srv["inventory"], cfg.get("inventory", "")),
+            "type":       (srv["type"],      cfg.get("type", "static")),
+            "inventory":  (srv["inventory"], cfg.get("inventory", "")),
+            "ssh_key":    (key_id_to_name.get(srv.get("ssh_key_id"), "None"),    cfg.get("ssh_key", "None")),
+            "become_key": (key_id_to_name.get(srv.get("become_key_id"), "None"), cfg.get("become_key", "None")),
         })
         results.append(ResourceDiff(_CHANGED if changes else _UNCHANGED, name, changes))
     return results
