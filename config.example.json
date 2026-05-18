@@ -1,0 +1,217 @@
+{
+  "environments": [
+    {
+      "json": "{}",
+      "name": "Empty"
+    },
+    {
+      "env": "{\"ANSIBLE_FORCE_COLOR\": \"1\", \"ANSIBLE_STDOUT_CALLBACK\": \"yaml\"}",
+      "json": "{\"app_version\": \"1.4.2\", \"deploy_env\": \"production\", \"db_port\": \"5432\", \"redis_port\": \"6379\", \"nginx_worker_processes\": \"auto\"}",
+      "name": "Production"
+    },
+    {
+      "env": "{\"ANSIBLE_FORCE_COLOR\": \"1\", \"ANSIBLE_STDOUT_CALLBACK\": \"yaml\"}",
+      "json": "{\"app_version\": \"1.5.0-rc1\", \"deploy_env\": \"staging\", \"db_port\": \"5432\", \"redis_port\": \"6379\", \"nginx_worker_processes\": \"2\"}",
+      "name": "Staging"
+    }
+  ],
+  "integration_aliases": [],
+  "integrations": [],
+  "inventories": [
+    {
+      "become_key": "None",
+      "inventory": "[local]\nlocalhost ansible_connection=local",
+      "name": "Localhost",
+      "ssh_key": "None",
+      "type": "static"
+    },
+    {
+      "become_key": "Sudo Credentials",
+      "inventory": "[web]\nweb1 ansible_host=10.0.0.11\nweb2 ansible_host=10.0.0.12\nweb3 ansible_host=10.0.0.13\n\n[db]\ndb1 ansible_host=10.0.1.11\ndb2 ansible_host=10.0.1.12\n\n[cache]\ncache1 ansible_host=10.0.2.11\n\n[all:vars]\nansible_user=deploy\nansible_become=true",
+      "name": "Production",
+      "ssh_key": "Deploy SSH Key",
+      "type": "static"
+    },
+    {
+      "become_key": "Sudo Credentials",
+      "inventory": "[web]\nstaging-web1 ansible_host=10.1.0.11\n\n[db]\nstaging-db1 ansible_host=10.1.1.11\n\n[all:vars]\nansible_user=deploy\nansible_become=true",
+      "name": "Staging",
+      "ssh_key": "Deploy SSH Key",
+      "type": "static"
+    }
+  ],
+  "keys": [
+    {
+      "name": "Ansible Vault Password",
+      "owner": "",
+      "type": "login_password"
+    },
+    {
+      "name": "Deploy SSH Key",
+      "owner": "",
+      "type": "ssh"
+    },
+    {
+      "name": "None",
+      "owner": "",
+      "type": "none"
+    },
+    {
+      "name": "Sudo Credentials",
+      "owner": "",
+      "type": "login_password"
+    }
+  ],
+  "meta": {
+    "alert": false,
+    "alert_chat": "",
+    "max_parallel_tasks": 2,
+    "name": "Web Infrastructure",
+    "type": ""
+  },
+  "repositories": [
+    {
+      "git_branch": "main",
+      "git_url": "https://github.com/myorg/ansible-playbooks.git",
+      "name": "Ansible Playbooks",
+      "ssh_key": "None"
+    },
+    {
+      "git_branch": "main",
+      "git_url": "https://github.com/myorg/ansible-roles.git",
+      "name": "Ansible Roles",
+      "ssh_key": "None"
+    }
+  ],
+  "schedules": [],
+  "secret_storages": [],
+  "templates": [
+    {
+      "allow_override_args_in_task": false,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "ansible",
+      "autorun": false,
+      "description": "Renew Let's Encrypt certificates on all web nodes",
+      "environment": "Empty",
+      "inventory": "Production",
+      "name": "Certificate Renewal",
+      "playbook": "certbot-renew.yml",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    },
+    {
+      "allow_override_args_in_task": false,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "ansible",
+      "autorun": false,
+      "description": "Run pending database migrations",
+      "environment": "Production",
+      "inventory": "Production",
+      "name": "Database Migrations",
+      "playbook": "db-migrate.yml",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    },
+    {
+      "allow_override_args_in_task": true,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "ansible",
+      "autorun": false,
+      "description": "Full application deployment to production",
+      "environment": "Production",
+      "inventory": "Production",
+      "name": "Deploy Application (Production)",
+      "playbook": "deploy.yml",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    },
+    {
+      "allow_override_args_in_task": true,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "ansible",
+      "autorun": false,
+      "description": "Full application deployment to staging",
+      "environment": "Staging",
+      "inventory": "Staging",
+      "name": "Deploy Application (Staging)",
+      "playbook": "deploy.yml",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    },
+    {
+      "allow_override_args_in_task": false,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "ansible",
+      "autorun": false,
+      "description": "Zero-downtime rolling restart of web tier",
+      "environment": "Production",
+      "inventory": "Production",
+      "name": "Rolling Restart (Production)",
+      "playbook": "rolling-restart.yml",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    },
+    {
+      "allow_override_args_in_task": false,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "ansible",
+      "autorun": false,
+      "description": "Apply security updates across the fleet",
+      "environment": "Empty",
+      "inventory": "Production",
+      "name": "Security Patching",
+      "playbook": "security-patch.yml",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    },
+    {
+      "allow_override_args_in_task": false,
+      "allow_override_branch_in_task": false,
+      "allow_parallel_tasks": false,
+      "app": "bash",
+      "autorun": false,
+      "description": "Run smoke tests against staging environment",
+      "environment": "Staging",
+      "inventory": "Localhost",
+      "name": "Smoke Tests",
+      "playbook": "smoke-test.sh",
+      "repository": "Ansible Playbooks",
+      "suppress_success_alerts": false,
+      "survey_vars": [],
+      "task_params": {},
+      "type": "",
+      "vaults": []
+    }
+  ],
+  "views": []
+}
