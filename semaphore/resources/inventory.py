@@ -23,6 +23,10 @@ def update_inventory(
     )
 
 
+def delete_inventory(client: SemaphoreClient, project_id: int, inv_id: int) -> None:
+    client.delete(f"/api/project/{project_id}/inventory/{inv_id}")
+
+
 def _payload(project_id: int, cfg: dict, key_map: dict[str, int], repo_map: dict[str, int]) -> dict:
     payload = {
         "name": cfg["name"],

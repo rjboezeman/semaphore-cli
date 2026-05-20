@@ -5,7 +5,7 @@ import sys
 from dotenv import load_dotenv
 
 from semaphore.client import SemaphoreClient
-from semaphore.commands import apply, check, diff, export, purge
+from semaphore.commands import apply, check, delete, diff, export, purge
 from semaphore.resources import list_projects
 from semaphore.schema import validate_export
 
@@ -47,6 +47,14 @@ Commands:
         account has sufficient rights to create and update resources.
         Lists all deployed projects with their resource counts and per-project
         role. Safe to run at any time — makes no changes.
+
+  delete <project> <template|inventory|environment> <name> [<name> ...]
+        Delete one or more named resources of a single type from a project.
+        <project> is matched by numeric id or exact name. Every name is
+        resolved before anything is deleted; the command aborts if any name
+        is missing or ambiguous. A single confirmation prompt lists every
+        resource to be removed. Secret values (keys) are never touched —
+        use the UI for those.
 
   purge
         Delete ALL projects and their resources from SemaphoreUI.
@@ -103,6 +111,18 @@ def main() -> None:
                 sys.exit(1)
             output_path = args[2] if len(args) > 2 else None
             export(client, args[1], output_path)
+
+        elif subcommand == "delete":
+            if len(args) < 4:
+                print(
+                    "ERROR: 'delete' requires <project> <template|inventory|environment> <name> [<name> ...]",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            project_ref = args[1]
+            resource_type = args[2]
+            resource_names = args[3:]
+            delete(client, project_ref, resource_type, resource_names)
 
         elif subcommand in ("apply", "diff"):
             if len(args) < 2:

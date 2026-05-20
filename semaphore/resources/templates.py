@@ -36,6 +36,10 @@ def update_template(
     )
 
 
+def delete_template(client: SemaphoreClient, project_id: int, tmpl_id: int) -> None:
+    client.delete(f"/api/project/{project_id}/templates/{tmpl_id}")
+
+
 def _payload(
     project_id: int,
     cfg: dict,

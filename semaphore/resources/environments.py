@@ -15,6 +15,10 @@ def update_environment(client: SemaphoreClient, project_id: int, env_id: int, cf
     client.put(f"/api/project/{project_id}/environment/{env_id}", {"id": env_id, **_payload(project_id, cfg)})
 
 
+def delete_environment(client: SemaphoreClient, project_id: int, env_id: int) -> None:
+    client.delete(f"/api/project/{project_id}/environment/{env_id}")
+
+
 def _payload(project_id: int, cfg: dict) -> dict:
     json_vars = cfg.get("json", {})
     env_vars = cfg.get("env", None)
