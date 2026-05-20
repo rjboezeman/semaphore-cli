@@ -184,7 +184,8 @@ def _diff_templates(
             "allow_parallel_tasks":          (srv.get("allow_parallel_tasks", False),  cfg.get("allow_parallel_tasks", False)),
             "suppress_success_alerts":       (srv.get("suppress_success_alerts", False), cfg.get("suppress_success_alerts", False)),
             "autorun":                       (srv.get("autorun", False),               cfg.get("autorun", False)),
-            "survey_vars":                   (srv.get("survey_vars") or [],            cfg.get("survey_vars") or []),
+            "survey_vars":                   (_normalize_survey_vars(srv.get("survey_vars")),
+                                              _normalize_survey_vars(cfg.get("survey_vars"))),
             "task_params":                   (srv.get("task_params") or {},            cfg.get("task_params") or {}),
         })
         results.append(ResourceDiff(_CHANGED if changes else _UNCHANGED, name, changes))
@@ -197,6 +198,21 @@ def _diff_templates(
 
 def _compare(fields: dict) -> dict:
     return {k: v for k, v in fields.items() if v[0] != v[1]}
+
+
+def _normalize_survey_vars(survey_vars: list[dict] | None) -> list[dict]:
+    """Strip server-vs-file artefacts so survey_var comparison is meaningful.
+
+    SemaphoreUI's /templates list endpoint omits `default_value` when it is
+    empty, while project exports keep it as an empty string. Drop the key on
+    both sides when it would otherwise be empty.
+    """
+    if not survey_vars:
+        return []
+    return [
+        {k: v for k, v in sv.items() if not (k == "default_value" and v in ("", None))}
+        for sv in survey_vars
+    ]
 
 
 def _parse_json_field(value: str | dict | None) -> dict | None:
