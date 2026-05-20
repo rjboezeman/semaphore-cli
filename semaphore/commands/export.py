@@ -10,7 +10,7 @@ import re
 import sys
 
 from semaphore.client import SemaphoreClient
-from semaphore.resources import list_projects
+from semaphore.resources import list_inventory, list_projects, list_repositories
 
 
 def export(client: SemaphoreClient, project_ref: str, output_path: str | None = None) -> None:
@@ -24,6 +24,7 @@ def export(client: SemaphoreClient, project_ref: str, output_path: str | None = 
     project = _resolve_project(projects, project_ref)
 
     data = client.get(f"/api/project/{project['id']}/backup")
+    _enrich_file_inventories(client, project["id"], data)
 
     if output_path is None:
         output_path = f"{_slug(project['name'])}.json"
@@ -42,6 +43,40 @@ def export(client: SemaphoreClient, project_ref: str, output_path: str | None = 
         ]
     )
     print(f"  {counts}")
+
+
+def _enrich_file_inventories(client: SemaphoreClient, project_id: int, data: dict) -> None:
+    """Inject `repository` (by name) onto every file-type inventory.
+
+    SemaphoreUI's /backup endpoint omits the repository name for file-type
+    inventories, which makes the export fail schema validation on a later
+    diff/apply (file-type inventories require both `repository` and
+    `inventory`). The /inventory list endpoint still has `repository_id`, so
+    we resolve names from there and graft them onto the backup payload.
+    """
+    inventories = data.get("inventories") or []
+    if not any(inv.get("type") == "file" and "repository" not in inv for inv in inventories):
+        return
+
+    deployed_inv = list_inventory(client, project_id)
+    deployed_repos = list_repositories(client, project_id)
+    inv_repo_id_by_name = {
+        inv["name"]: inv.get("repository_id")
+        for inv in deployed_inv
+        if inv.get("type") == "file"
+    }
+    repo_name_by_id = {r["id"]: r["name"] for r in deployed_repos}
+
+    for inv in inventories:
+        if inv.get("type") != "file" or "repository" in inv:
+            continue
+        repo_id = inv_repo_id_by_name.get(inv.get("name"))
+        if repo_id is None:
+            continue
+        repo_name = repo_name_by_id.get(repo_id)
+        if repo_name is None:
+            continue
+        inv["repository"] = repo_name
 
 
 def _resolve_project(projects: list[dict], project_ref: str) -> dict:
