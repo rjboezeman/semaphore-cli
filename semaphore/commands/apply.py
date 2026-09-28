@@ -76,6 +76,12 @@ def _upsert_keys(client: SemaphoreClient, project_id: int, keys_cfg: list[dict])
 
     for cfg in keys_cfg:
         name = cfg["name"]
+        if cfg.get("owner"):
+            # An owned key (owner "environment") is an environment secret, not a
+            # project key: the /keys endpoint neither lists nor creates it, and
+            # its value can only be set on the environment itself.
+            print(f"    [skipped] {name}  ({cfg['owner']} secret — managed on the {cfg['owner']})")
+            continue
         if cfg["type"] == "none":
             if none_key:
                 name_map[name] = none_key["id"]

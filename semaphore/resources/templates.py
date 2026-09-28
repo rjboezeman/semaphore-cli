@@ -40,6 +40,18 @@ def delete_template(client: SemaphoreClient, project_id: int, tmpl_id: int) -> N
     client.delete(f"/api/project/{project_id}/templates/{tmpl_id}")
 
 
+def environment_names(cfg: dict) -> list[str]:
+    """Environment names of a template config, in order.
+
+    SemaphoreUI 2.18+ exports a template's environments as a list
+    (`environments`); older exports and hand-written files use a single
+    `environment`. The first entry is the template's default environment.
+    """
+    if cfg.get("environments"):
+        return list(cfg["environments"])
+    return [cfg["environment"]]
+
+
 def _payload(
     project_id: int,
     cfg: dict,
@@ -56,7 +68,10 @@ def _payload(
         "playbook":                      cfg.get("playbook", ""),
         "repository_id":                 repo_name_map[cfg["repository"]],
         "inventory_id":                  inv_name_map[cfg["inventory"]],
-        "environment_id":                env_name_map[cfg["environment"]],
+        # environment_id is the default; environment_ids is what 2.18+ uses
+        # for templates offering several. Older servers ignore the list.
+        "environment_id":                env_name_map[environment_names(cfg)[0]],
+        "environment_ids":               [env_name_map[n] for n in environment_names(cfg)],
         "ssh_key_id":                    none_key_id,
         "description":                   cfg.get("description", ""),
         "allow_override_args_in_task":   cfg.get("allow_override_args_in_task", False),

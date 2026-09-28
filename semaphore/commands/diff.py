@@ -6,6 +6,7 @@ from semaphore.resources import (
     list_environments, list_inventory, list_keys,
     list_projects, list_repositories, list_schedules, list_templates,
 )
+from semaphore.resources.templates import environment_names
 
 _NEW       = "[+]"
 _CHANGED   = "[~]"
@@ -55,8 +56,17 @@ def diff(client: SemaphoreClient, config: dict) -> None:
     inv_id_to_name  = {i["id"]: i["name"] for i in srv_invs.values()}
     env_id_to_name  = {e["id"]: e["name"] for e in srv_envs.values()}
 
+    # Environment secrets are exported as owned keys but only listed on their
+    # environment, and only by the per-environment endpoint (the list endpoint
+    # omits them), so collect their names for _diff_keys.
+    srv_secret_names = {
+        sec["name"]
+        for e in srv_envs.values()
+        for sec in (client.get(f"/api/project/{project_id}/environment/{e['id']}").get("secrets") or [])
+    }
+
     print("  Keys:")
-    diffs = _diff_keys(config.get("keys", []), srv_keys)
+    diffs = _diff_keys(config.get("keys", []), srv_keys, srv_secret_names)
     _print_diffs(diffs, "    ")
     _tally("keys", diffs, counters)
 
@@ -94,10 +104,15 @@ def diff(client: SemaphoreClient, config: dict) -> None:
 # Per-resource diff functions
 # ---------------------------------------------------------------------------
 
-def _diff_keys(keys_cfg: list[dict], srv_by_name: dict) -> list[ResourceDiff]:
+def _diff_keys(keys_cfg: list[dict], srv_by_name: dict, srv_secret_names: set[str]) -> list[ResourceDiff]:
     results = []
     for cfg in keys_cfg:
         name = cfg["name"]
+        if cfg.get("owner"):
+            note = f"{cfg['owner']} secret — apply skips it; values are set on the {cfg['owner']}"
+            status = _UNCHANGED if name in srv_secret_names else _NEW
+            results.append(ResourceDiff(status, name, note=note))
+            continue
         if name not in srv_by_name:
             results.append(ResourceDiff(_NEW, name))
             continue
@@ -184,7 +199,7 @@ def _diff_templates(
             "playbook":                      (srv.get("playbook", ""),                 cfg.get("playbook", "")),
             "repository":                    (repo_id_to_name.get(srv["repository_id"], "?"), cfg["repository"]),
             "inventory":                     (inv_id_to_name.get(srv["inventory_id"], "?"),   cfg["inventory"]),
-            "environment":                   (env_id_to_name.get(srv["environment_id"], "?"), cfg["environment"]),
+            "environments":                  (_srv_environment_names(srv, env_id_to_name), environment_names(cfg)),
             "description":                   (srv.get("description", ""),              cfg.get("description", "")),
             "allow_override_args_in_task":   (srv.get("allow_override_args_in_task", False),   cfg.get("allow_override_args_in_task", False)),
             "allow_override_branch_in_task": (srv.get("allow_override_branch_in_task", False), cfg.get("allow_override_branch_in_task", False)),
@@ -231,6 +246,15 @@ def _compare(fields: dict) -> dict:
     return {k: v for k, v in fields.items() if v[0] != v[1]}
 
 
+def _srv_environment_names(srv: dict, env_id_to_name: dict) -> list[str]:
+    """A deployed template's environment names, default first.
+
+    2.18+ returns `environment_ids`; older servers only `environment_id`.
+    """
+    ids = srv.get("environment_ids") or [srv.get("environment_id")]
+    return [env_id_to_name.get(i, "?") for i in ids]
+
+
 def _normalize_survey_vars(survey_vars: list[dict] | None) -> list[dict]:
     """Strip server-vs-file artefacts so survey_var comparison is meaningful.
 
@@ -260,7 +284,8 @@ def _parse_json_field(value: str | dict | None) -> dict | None:
 def _print_diffs(diffs: list[ResourceDiff], indent: str) -> None:
     for d in diffs:
         if d.status == _NEW:
-            print(f"{indent}{_NEW} {d.name}  (not deployed)")
+            suffix = f"; {d.note}" if d.note else ""
+            print(f"{indent}{_NEW} {d.name}  (not deployed{suffix})")
         elif d.status == _CHANGED:
             suffix = f"  ({d.note})" if d.note else ""
             print(f"{indent}{_CHANGED} {d.name}{suffix}")

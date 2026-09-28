@@ -114,6 +114,8 @@ Apply a SemaphoreUI export file to the instance. The project is identified by th
 
 **Note on keys:** Export files never contain secret values (SSH private keys, passwords). Existing keys are skipped to preserve live credentials. New keys are created with `PLACEHOLDER` values — you must update them via the SemaphoreUI UI before running tasks.
 
+**Note on environment secrets:** SemaphoreUI 2.18+ exports an environment's secrets as keys with an `owner` (`"owner": "environment"`, `"type": "string"`). `apply` skips them — their values can only be set on the environment itself — and `diff` reports them as in sync when a secret of that name exists on a deployed environment.
+
 ```
 $ semaphore-cli apply web-infrastructure.json
 
@@ -292,6 +294,8 @@ Resources reference each other by **name** (the same names used in the Semaphore
 |------|-------------|
 | `None` | The auto-created key with no credentials |
 | `Empty` | The auto-created empty environment |
+
+A template names its environment with `environment` (a single name) or, as SemaphoreUI 2.18+ exports it, `environments` (a list of names; the first is the default). Either form is accepted.
 
 Supported values for `template.app`: `ansible`, `terraform`, `tofu`, `bash`, `powershell`.  
 Supported values for `inventory.type`: `static`, `file`.

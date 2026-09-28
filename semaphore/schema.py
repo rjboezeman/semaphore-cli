@@ -30,8 +30,11 @@ EXPORT_SCHEMA: dict = {
                 "required": ["name", "type"],
                 "properties": {
                     "name":  {"type": "string", "minLength": 1},
-                    "type":  {"type": "string", "enum": ["ssh", "login_password", "none"]},
+                    # "string" is an environment secret: SemaphoreUI 2.18+ exports
+                    # those as keys with a non-empty owner (e.g. "environment").
+                    "type":  {"type": "string", "enum": ["ssh", "login_password", "none", "string"]},
                     "owner": {"type": "string"},
+                    "synchronized": {"type": "boolean"},
                 },
             },
         },
@@ -86,7 +89,10 @@ EXPORT_SCHEMA: dict = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["name", "app", "playbook", "repository", "inventory", "environment"],
+                "required": ["name", "app", "playbook", "repository", "inventory"],
+                # SemaphoreUI 2.18+ exports `environments` (a list of names);
+                # older exports and hand-written files use `environment`.
+                "anyOf": [{"required": ["environment"]}, {"required": ["environments"]}],
                 "properties": {
                     "name":                          {"type": "string", "minLength": 1},
                     "app":                           {"type": "string", "enum": ["ansible", "terraform", "tofu", "bash", "powershell"]},
@@ -95,6 +101,9 @@ EXPORT_SCHEMA: dict = {
                     "repository":                    {"type": "string", "minLength": 1},
                     "inventory":                     {"type": "string", "minLength": 1},
                     "environment":                   {"type": "string", "minLength": 1},
+                    "environments":                  {"type": "array", "minItems": 1,
+                                                      "items": {"type": "string", "minLength": 1}},
+                    "roles":                         {"type": "array"},
                     "description":                   {"type": "string"},
                     "allow_override_args_in_task":   {"type": "boolean"},
                     "allow_override_branch_in_task": {"type": "boolean"},
@@ -145,6 +154,8 @@ EXPORT_SCHEMA: dict = {
                     "cron_format": {"type": "string", "minLength": 1},
                     "template":    {"type": "string", "minLength": 1},
                     "active":      {"type": "boolean"},
+                    "type":        {"type": "string"},
+                    "delete_after_run": {"type": "boolean"},
                 },
             },
         },
@@ -153,6 +164,8 @@ EXPORT_SCHEMA: dict = {
         "integrations":       {"type": "array"},
         "integration_aliases":{"type": "array"},
         "secret_storages":    {"type": "array"},
+        "roles":              {"type": "array"},
+        "runners":            {"type": "array"},
     },
 }
 
