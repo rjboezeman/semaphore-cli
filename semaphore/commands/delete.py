@@ -2,8 +2,9 @@ import sys
 
 from semaphore.client import SemaphoreClient
 from semaphore.resources import (
-    delete_environment, delete_inventory, delete_template,
-    list_environments, list_inventory, list_projects, list_templates,
+    delete_environment, delete_inventory, delete_schedule, delete_template,
+    list_environments, list_inventory, list_projects, list_schedules,
+    list_templates,
 )
 
 
@@ -12,6 +13,7 @@ _HANDLERS = {
     "template":    (list_templates,    delete_template,    "templates"),
     "inventory":   (list_inventory,    delete_inventory,   "inventories"),
     "environment": (list_environments, delete_environment, "environments"),
+    "schedule":    (list_schedules,    delete_schedule,    "schedules"),
 }
 
 
@@ -23,7 +25,7 @@ def delete(
 ) -> None:
     """Delete one or more named resources of a single type from a project.
 
-    Resource type must be one of: template, inventory, environment.
+    Resource type must be one of: template, inventory, environment, schedule.
     Names are matched exactly. Resolves every name before deleting anything;
     aborts if any name is missing or ambiguous. Asks for a single
     confirmation listing every resource to be deleted.

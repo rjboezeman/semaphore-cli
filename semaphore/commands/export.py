@@ -39,7 +39,7 @@ def export(client: SemaphoreClient, project_ref: str, output_path: str | None = 
         for k, label in [
             ("keys", "keys"), ("repositories", "repositories"),
             ("inventories", "inventories"), ("environments", "environments"),
-            ("templates", "templates"),
+            ("templates", "templates"), ("schedules", "schedules"),
         ]
     )
     print(f"  {counts}")

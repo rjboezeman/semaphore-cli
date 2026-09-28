@@ -1,10 +1,10 @@
 from semaphore.client import SemaphoreClient
 from semaphore.resources import (
     create_environment, create_inventory, create_key, create_project,
-    create_repository, list_environments, list_inventory,
-    list_keys, list_projects, list_repositories, list_templates,
-    update_environment, update_inventory, update_key, update_project,
-    update_repository,
+    create_repository, create_schedule, list_environments, list_inventory,
+    list_keys, list_projects, list_repositories, list_schedules,
+    list_templates, update_environment, update_inventory, update_key,
+    update_project, update_repository, update_schedule,
 )
 from semaphore.resources.templates import create_template, update_template
 
@@ -47,7 +47,10 @@ def apply(client: SemaphoreClient, config: dict) -> None:
     env_name_map = _upsert_environments(client, project_id, config.get("environments", []))
 
     print("  Templates:")
-    _upsert_templates(client, project_id, config.get("templates", []), none_key_id, repo_name_map, inv_name_map, env_name_map)
+    tmpl_name_map = _upsert_templates(client, project_id, config.get("templates", []), none_key_id, repo_name_map, inv_name_map, env_name_map)
+
+    print("  Schedules:")
+    _upsert_schedules(client, project_id, config.get("schedules", []), tmpl_name_map)
 
     print("\nDone.")
 
@@ -192,8 +195,9 @@ def _upsert_templates(
     repo_name_map: dict[str, int],
     inv_name_map: dict[str, int],
     env_name_map: dict[str, int],
-) -> None:
+) -> dict[str, int]:
     existing = {t["name"]: t for t in list_templates(client, project_id)}
+    name_map: dict[str, int] = {t["name"]: t["id"] for t in existing.values()}
 
     for cfg in templates_cfg:
         name = cfg["name"]
@@ -201,5 +205,47 @@ def _upsert_templates(
             update_template(client, project_id, existing[name]["id"], cfg, none_key_id, repo_name_map, inv_name_map, env_name_map)
             print(f"    [updated] {name}")
         else:
-            create_template(client, project_id, cfg, none_key_id, repo_name_map, inv_name_map, env_name_map)
+            created = create_template(client, project_id, cfg, none_key_id, repo_name_map, inv_name_map, env_name_map)
+            name_map[name] = created["id"]
+            print(f"    [created] {name}")
+
+    return name_map
+
+
+def _upsert_schedules(
+    client: SemaphoreClient,
+    project_id: int,
+    schedules_cfg: list[dict],
+    tmpl_name_map: dict[str, int],
+) -> None:
+    """Upsert schedules, matched by schedule name.
+
+    The export format references each schedule's template by name. Schedules
+    without a name cannot be matched against the deployed state and are
+    skipped (SemaphoreUI allows unnamed schedules; name yours to manage them
+    here). Deployed schedules absent from the file are left untouched, like
+    every other resource type.
+    """
+    existing: dict[str, list[dict]] = {}
+    for s in list_schedules(client, project_id):
+        existing.setdefault(s.get("name", ""), []).append(s)
+
+    for cfg in schedules_cfg:
+        name = cfg.get("name", "")
+        if not name:
+            print(f"    [skipped] unnamed schedule (cron '{cfg.get('cron_format', '?')}') — give it a name to manage it")
+            continue
+        if cfg.get("template") not in tmpl_name_map:
+            print(f"    [skipped] {name}  (references unknown template '{cfg.get('template')}')")
+            continue
+
+        matches = existing.get(name, [])
+        if len(matches) > 1:
+            ids = ", ".join(str(m["id"]) for m in matches)
+            print(f"    [skipped] {name}  (name is ambiguous on the server — ids: {ids})")
+        elif matches:
+            update_schedule(client, project_id, matches[0]["id"], cfg, tmpl_name_map)
+            print(f"    [updated] {name}")
+        else:
+            create_schedule(client, project_id, cfg, tmpl_name_map)
             print(f"    [created] {name}")

@@ -17,7 +17,7 @@ semaphore-cli list                 # list deployed projects
 
 ## Features
 
-- **Apply** — server-side apply from a SemaphoreUI export file. Creates new resources and updates existing ones, matched by name. Never deletes anything not in the file.
+- **Apply** — server-side apply from a SemaphoreUI export file. Creates new resources and updates existing ones, matched by name. Never deletes anything not in the file. Covers keys, repositories, inventories, environments, templates, and schedules (schedules must be named to be managed; the export format references a schedule's template by name).
 - **Diff** — compare a config file against the live state and report what is new `[+]`, changed `[~]`, or already in sync `[=]`.
 - **Export** — save a deployed project to an export file (via SemaphoreUI's own backup endpoint), ready to feed back into `diff` and `apply`.
 - **Check** — verify that the API is reachable, login works, and the account has sufficient rights to create and update resources. Reports per-project roles and resource counts.

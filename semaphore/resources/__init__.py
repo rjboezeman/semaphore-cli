@@ -3,6 +3,7 @@ from semaphore.resources.inventory import create_inventory, delete_inventory, li
 from semaphore.resources.keys import create_key, list_keys, update_key
 from semaphore.resources.projects import create_project, list_projects, update_project
 from semaphore.resources.repositories import create_repository, list_repositories, update_repository
+from semaphore.resources.schedules import create_schedule, delete_schedule, list_schedules, update_schedule
 from semaphore.resources.templates import create_template, delete_template, list_templates, update_template
 
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     "create_key",         "list_keys",          "update_key",
     "create_project",     "list_projects",      "update_project",
     "create_repository",  "list_repositories",  "update_repository",
+    "create_schedule",    "delete_schedule",    "list_schedules",    "update_schedule",
     "create_template",    "delete_template",    "list_templates",    "update_template",
 ]

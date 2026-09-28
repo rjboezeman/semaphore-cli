@@ -131,8 +131,24 @@ EXPORT_SCHEMA: dict = {
                 },
             },
         },
+        # Schedules reference their template by name. `name` is what apply
+        # matches on; SemaphoreUI allows unnamed schedules, so exports may
+        # contain them — apply skips those rather than the schema rejecting
+        # the whole file.
+        "schedules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["cron_format", "template"],
+                "properties": {
+                    "name":        {"type": "string"},
+                    "cron_format": {"type": "string", "minLength": 1},
+                    "template":    {"type": "string", "minLength": 1},
+                    "active":      {"type": "boolean"},
+                },
+            },
+        },
         # Optional fields present in real exports
-        "schedules":          {"type": "array"},
         "views":              {"type": "array"},
         "integrations":       {"type": "array"},
         "integration_aliases":{"type": "array"},

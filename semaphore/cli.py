@@ -48,7 +48,7 @@ Commands:
         Lists all deployed projects with their resource counts and per-project
         role. Safe to run at any time — makes no changes.
 
-  delete <project> <template|inventory|environment> <name> [<name> ...]
+  delete <project> <template|inventory|environment|schedule> <name> [<name> ...]
         Delete one or more named resources of a single type from a project.
         <project> is matched by numeric id or exact name. Every name is
         resolved before anything is deleted; the command aborts if any name
@@ -115,7 +115,7 @@ def main() -> None:
         elif subcommand == "delete":
             if len(args) < 4:
                 print(
-                    "ERROR: 'delete' requires <project> <template|inventory|environment> <name> [<name> ...]",
+                    "ERROR: 'delete' requires <project> <template|inventory|environment|schedule> <name> [<name> ...]",
                     file=sys.stderr,
                 )
                 sys.exit(1)

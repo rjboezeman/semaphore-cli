@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from semaphore.client import SemaphoreClient
 from semaphore.resources import (
     list_environments, list_inventory, list_keys,
-    list_projects, list_repositories, list_templates,
+    list_projects, list_repositories, list_schedules, list_templates,
 )
 
 _NEW       = "[+]"
@@ -79,6 +79,13 @@ def diff(client: SemaphoreClient, config: dict) -> None:
     diffs = _diff_templates(config.get("templates", []), srv_tmpls, repo_id_to_name, inv_id_to_name, env_id_to_name)
     _print_diffs(diffs, "    ")
     _tally("templates", diffs, counters)
+
+    print("  Schedules:")
+    tmpl_id_to_name = {t["id"]: t["name"] for t in srv_tmpls.values()}
+    srv_scheds = {s.get("name", ""): s for s in list_schedules(client, project_id)}
+    diffs = _diff_schedules(config.get("schedules", []), srv_scheds, tmpl_id_to_name)
+    _print_diffs(diffs, "    ")
+    _tally("schedules", diffs, counters)
 
     _print_summary(counters)
 
@@ -192,6 +199,30 @@ def _diff_templates(
     return results
 
 
+def _diff_schedules(
+    schedules_cfg: list[dict],
+    srv_by_name: dict,
+    tmpl_id_to_name: dict,
+) -> list[ResourceDiff]:
+    results = []
+    for cfg in schedules_cfg:
+        name = cfg.get("name", "")
+        if not name:
+            results.append(ResourceDiff(_NEW, "(unnamed)", note="unnamed schedules are skipped on apply"))
+            continue
+        if name not in srv_by_name:
+            results.append(ResourceDiff(_NEW, name))
+            continue
+        srv = srv_by_name[name]
+        changes = _compare({
+            "cron_format": (srv.get("cron_format", ""),                          cfg.get("cron_format", "")),
+            "template":    (tmpl_id_to_name.get(srv.get("template_id"), "?"),    cfg.get("template", "?")),
+            "active":      (srv.get("active", True),                             cfg.get("active", True)),
+        })
+        results.append(ResourceDiff(_CHANGED if changes else _UNCHANGED, name, changes))
+    return results
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -252,7 +283,7 @@ def _count_all_new(config: dict, counters: dict) -> None:
     for resource_type, key in [
         ("keys", "keys"), ("repositories", "repositories"),
         ("inventory", "inventories"), ("environments", "environments"),
-        ("templates", "templates"),
+        ("templates", "templates"), ("schedules", "schedules"),
     ]:
         counters.setdefault(resource_type, [0, 0, 0])[0] += len(config.get(key, []))
 
@@ -265,6 +296,7 @@ def _print_summary(counters: dict) -> None:
         ("inventory",    "Inventory"),
         ("environments", "Environments"),
         ("templates",    "Templates"),
+        ("schedules",    "Schedules"),
     ]
     for key, label in labels:
         if key not in counters:
